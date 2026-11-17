@@ -3,7 +3,7 @@ name = "SigmaOS-bevy"
 tier = 2
 stability = "scaffold"
 language = "rust"
-description = "bevy component"
+description = "Bevy game engine runtime compatibility layer for SigmaOS"
 upstream = []
 
 [contract]
