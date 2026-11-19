@@ -2,31 +2,14 @@
 name = "SigmaOS-bevy"
 version = "0.1.0"
 edition = "2021"
-description = "Bevy game engine runtime compatibility layer for SigmaOS"
-license = "MIT"
-repository = "https://github.com/AaryanSinghChauhan09/SigmaOS-bevy"
-
-[dependencies]
-anyhow = "1.0"
-tokio = { version = "1.35", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-log = "0.4"
-env_logger = "0.11"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-thiserror = "1.0"
+license = "Apache-2.0"
+description = "SigmaOS bevy component"
 
 [lib]
 name = "bevy"
 path = "src/lib.rs"
 
-[[bin]]
-name = "sigmaos-bevy"
-path = "src/main.rs"
+[dependencies]
+thiserror = "1"
 
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = "abort"
+[dev-dependencies]

@@ -1,80 +1,131 @@
-//! SigmaOS Bevy Runtime Compatibility Layer
-//!
-//! Bevy runtime compatibility for SigmaOS
-//! Provides runtime environment and execution
-
+//! SigmaOS-bevy — bevy component for SigmaOS
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
-use anyhow::Result;
-use log::{debug, error, info, warn};
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use thiserror::Error;
 
-pub mod runtime;
-pub mod compiler;
-pub mod package;
-pub mod tools;
-pub mod error;
-pub mod config;
-
-pub use runtime::*;
-pub use compiler::*;
-pub use package::*;
-pub use tools::*;
-pub use error::*;
-pub use config::*;
-
-/// Runtime compatibility layer
-pub struct Runtime {
-    pub config: RuntimeConfig,
-    pub environment: Arc<RwLock<Environment>>,
-    pub package_manager: Arc<RwLock<PackageManager>>,
+/// Error types for this component.
+#[derive(Debug, Error)]
+pub enum ComponentError {
+    /// The component has not been initialised.
+    #[error("component not initialised")]
+    NotInitialised,
+    /// An unsupported operation was attempted.
+    #[error("unsupported operation: {0}")]
+    Unsupported(&'static str),
 }
 
-impl Runtime {
-    /// Create new runtime instance
-    pub fn new() -> Result<Self> {
-        info!("Initializing SigmaOS Bevy runtime");
-        let config = RuntimeConfig::load_default()?;
-        debug!("Loaded runtime configuration");
-        
-        let environment = Arc::new(RwLock::new(Environment::new(config.clone())?));
-        let package_manager = Arc::new(RwLock::new(PackageManager::new(config.clone())?));
-        
-        Ok(Self {
-            config,
-            environment,
-            package_manager,
-        })
+/// Convenience result type.
+pub type ComponentResult<T> = Result<T, ComponentError>;
+
+/// Core component struct for bevy.
+#[derive(Debug, Default, Clone)]
+pub struct Component {
+    initialised: bool,
+    name: String,
+}
+
+impl Component {
+    /// Create a new, uninitialised component.
+    pub fn new() -> Self {
+        Self {
+            initialised: false,
+            name: String::from("bevy"),
+        }
     }
 
-    /// Initialize runtime
-    pub async fn init(&mut self) -> Result<()> {
-        info!("Starting runtime initialization");
-        
-        let mut environment = self.environment.write().await;
-        environment.init().await?;
-        debug!("Environment initialized");
-        
-        let mut package_manager = self.package_manager.write().await;
-        package_manager.init().await?;
-        debug!("Package manager initialized");
-        
-        info!("Runtime initialization complete");
+    /// Initialise the component.
+    pub fn init(&mut self) -> ComponentResult<()> {
+        self.initialised = true;
         Ok(())
     }
 
-    /// Shutdown runtime
-    pub async fn shutdown(&mut self) -> Result<()> {
-        info!("Shutting down runtime");
-        
-        let mut environment = self.environment.write().await;
-        environment.shutdown().await?;
-        
-        let mut package_manager = self.package_manager.write().await;
-        package_manager.shutdown().await?;
-        
-        info!("Runtime shutdown complete");
+    /// Returns true if the component has been initialised.
+    pub fn is_ready(&self) -> bool {
+        self.initialised
+    }
+
+    /// Execute the component's primary operation.
+    pub fn run(&self) -> ComponentResult<()> {
+        if !self.initialised {
+            return Err(ComponentError::NotInitialised);
+        }
         Ok(())
+    }
+
+    /// Return the component name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Reset the component to uninitialised state.
+    pub fn reset(&mut self) {
+        self.initialised = false;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_not_ready_aaa() {
+        // Arrange + Act
+        let c = Component::new();
+        // Assert
+        assert!(!c.is_ready());
+    }
+
+    #[test]
+    fn test_init_makes_ready_aaa() {
+        // Arrange
+        let mut c = Component::new();
+        // Act
+        c.init().unwrap();
+        // Assert
+        assert!(c.is_ready());
+    }
+
+    #[test]
+    fn test_run_before_init_fails_aaa() {
+        // Arrange
+        let c = Component::new();
+        // Act
+        let result = c.run();
+        // Assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_run_after_init_succeeds_aaa() {
+        // Arrange
+        let mut c = Component::new();
+        c.init().unwrap();
+        // Act
+        let result = c.run();
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_reset_clears_init_aaa() {
+        // Arrange
+        let mut c = Component::new();
+        c.init().unwrap();
+        assert!(c.is_ready());
+        // Act
+        c.reset();
+        // Assert
+        assert!(!c.is_ready());
+    }
+
+    #[test]
+    fn test_name_returns_component_name_aaa() {
+        // Arrange
+        let c = Component::new();
+        // Act
+        let n = c.name();
+        // Assert
+        assert!(!n.is_empty());
     }
 }
